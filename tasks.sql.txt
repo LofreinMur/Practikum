@@ -1,0 +1,358 @@
+USE PracticeDB;
+GO
+
+Задание 1. Посмотреть все таблицы
+SELECT TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_TYPE = 'BASE TABLE';
+GO
+
+Задание 2. Вывести все отделы
+SELECT *
+FROM Departments;
+GO
+
+Задание 3. Вывести всех сотрудников
+SELECT *
+FROM Employees;
+GO
+
+Задание 4. Найти сотрудников с зарплатой больше 70000
+SELECT EmployeeName, Salary
+FROM Employees
+WHERE Salary > 70000;
+GO
+
+Задание 5. Найти сотрудников, принятых после 2020 года
+SELECT EmployeeName, HireDate
+FROM Employees
+WHERE HireDate >= '2021-01-01';
+GO
+
+Задание 6. Сортировка сотрудников по зарплате
+SELECT EmployeeName, Salary
+FROM Employees
+ORDER BY Salary DESC;
+GO
+
+Задание 7. Вывести пять сотрудников с самой высокой зарплатой
+SELECT TOP 5 EmployeeName, Salary
+FROM Employees
+ORDER BY Salary DESC;
+GO
+
+Задание 8. Агрегатные функции
+SELECT
+    COUNT(*) AS EmployeeCount,
+    AVG(Salary) AS AverageSalary,
+    MIN(Salary) AS MinSalary,
+    MAX(Salary) AS MaxSalary,
+    SUM(Salary) AS TotalSalary
+FROM Employees;
+GO
+
+Задание 9. Количество сотрудников и средняя зарплата по отделам
+SELECT
+    d.DepartmentName,
+    COUNT(e.EmployeeId) AS EmployeeCount,
+    AVG(e.Salary) AS AverageSalary
+FROM Departments d
+LEFT JOIN Employees e
+    ON d.DepartmentId = e.DepartmentId
+GROUP BY d.DepartmentName;
+GO
+
+Задание 10. Отделы, в которых средняя зарплата больше 70000
+SELECT
+    d.DepartmentName,
+    AVG(e.Salary) AS AverageSalary
+FROM Departments d
+JOIN Employees e
+    ON d.DepartmentId = e.DepartmentId
+GROUP BY d.DepartmentName
+HAVING AVG(e.Salary) > 70000;
+GO
+
+Задание 11. INNER JOIN: сотрудники и их отделы
+SELECT
+    e.EmployeeName,
+    e.Salary,
+    d.DepartmentName
+FROM Employees e
+INNER JOIN Departments d
+    ON e.DepartmentId = d.DepartmentId;
+GO
+
+Задание 12. LEFT JOIN: все отделы и сотрудники
+SELECT
+    d.DepartmentName,
+    e.EmployeeName
+FROM Departments d
+LEFT JOIN Employees e
+    ON d.DepartmentId = e.DepartmentId;
+GO
+
+Задание 13. Сотрудники, проекты и количество часов
+SELECT
+    e.EmployeeName,
+    p.ProjectName,
+    ep.Hours
+FROM EmployeeProjects ep
+JOIN Employees e
+    ON ep.EmployeeId = e.EmployeeId
+JOIN Projects p
+    ON ep.ProjectId = p.ProjectId;
+GO
+
+Задание 14. Самостоятельное соединение таблицы Employees
+Показывает сотрудника и его руководителя
+SELECT
+    e.EmployeeName AS Employee,
+    m.EmployeeName AS Manager
+FROM Employees e
+LEFT JOIN Employees m
+    ON e.ManagerId = m.EmployeeId;
+GO
+
+Задание 15. Подзапрос: сотрудники с зарплатой выше средней
+SELECT EmployeeName, Salary
+FROM Employees
+WHERE Salary > (
+    SELECT AVG(Salary)
+    FROM Employees
+);
+GO
+
+Задание 16. Подзапрос: сотрудники отдела Разработка
+SELECT EmployeeName, Salary
+FROM Employees
+WHERE DepartmentId = (
+    SELECT DepartmentId
+    FROM Departments
+    WHERE DepartmentName = N'Разработка'
+);
+GO
+
+Задание 17. EXISTS: сотрудники, участвующие в проектах
+SELECT e.EmployeeName
+FROM Employees e
+WHERE EXISTS (
+    SELECT 1
+    FROM EmployeeProjects ep
+    WHERE ep.EmployeeId = e.EmployeeId
+);
+GO
+
+Задание 18. UNION: общий список сотрудников и проектов
+SELECT EmployeeName AS Name
+FROM Employees
+UNION
+SELECT ProjectName
+FROM Projects;
+GO
+
+Задание 19. UPDATE: изменить зарплату сотрудника
+UPDATE Employees
+SET Salary = 100000
+WHERE EmployeeId = 2;
+
+SELECT EmployeeId, EmployeeName, Salary
+FROM Employees
+WHERE EmployeeId = 2;
+GO
+
+Задание 20. DELETE: удалить связь сотрудника с проектом
+DELETE FROM EmployeeProjects
+WHERE EmployeeId = 10 AND ProjectId = 5;
+
+SELECT *
+FROM EmployeeProjects
+WHERE EmployeeId = 10 AND ProjectId = 5;
+GO
+
+Задание 21. Транзакция
+BEGIN TRANSACTION;
+
+UPDATE Employees
+SET Salary = Salary + 5000
+WHERE DepartmentId = 1;
+
+SELECT EmployeeName, Salary
+FROM Employees
+WHERE DepartmentId = 1;
+
+ROLLBACK TRANSACTION;
+
+SELECT EmployeeName, Salary
+FROM Employees
+WHERE DepartmentId = 1;
+GO
+
+Задание 22. Создать представление с данными о сотрудниках
+CREATE OR ALTER VIEW vw_EmployeeDetails
+AS
+SELECT
+    e.EmployeeId,
+    e.EmployeeName,
+    e.Salary,
+    e.HireDate,
+    d.DepartmentName,
+    m.EmployeeName AS ManagerName
+FROM Employees e
+JOIN Departments d
+    ON e.DepartmentId = d.DepartmentId
+LEFT JOIN Employees m
+    ON e.ManagerId = m.EmployeeId;
+GO
+
+SELECT *
+FROM vw_EmployeeDetails;
+GO
+
+Задание 23. Создать индекс и посмотреть статистику выполнения
+CREATE NONCLUSTERED INDEX IX_Employees_DepartmentId
+ON Employees(DepartmentId);
+GO
+
+SET STATISTICS IO ON;
+
+SELECT EmployeeName, Salary
+FROM Employees
+WHERE DepartmentId = 1;
+
+SET STATISTICS IO OFF;
+GO
+
+Задание 24. Процедура поиска сотрудников по отделу
+CREATE OR ALTER PROCEDURE sp_GetEmployeesByDepartment
+    @DepartmentId INT
+AS
+BEGIN
+    SELECT EmployeeName, Salary, HireDate
+    FROM Employees
+    WHERE DepartmentId = @DepartmentId;
+END;
+GO
+
+EXEC sp_GetEmployeesByDepartment @DepartmentId = 1;
+GO
+
+Задание 25. Процедура с OUTPUT: средняя зарплата отдела
+CREATE OR ALTER PROCEDURE sp_GetAverageSalary
+    @DepartmentId INT,
+    @AverageSalary DECIMAL(10,2) OUTPUT
+AS
+BEGIN
+    SELECT @AverageSalary = AVG(Salary)
+    FROM Employees
+    WHERE DepartmentId = @DepartmentId;
+END;
+GO
+
+DECLARE @Result DECIMAL(10,2);
+
+EXEC sp_GetAverageSalary
+    @DepartmentId = 1,
+    @AverageSalary = @Result OUTPUT;
+
+SELECT @Result AS AverageSalary;
+GO
+
+Задание 26. Функции: скалярная и табличная
+CREATE OR ALTER FUNCTION dbo.fn_GetYearlySalary
+(
+    @MonthlySalary DECIMAL(10,2)
+)
+RETURNS DECIMAL(12,2)
+AS
+BEGIN
+    RETURN @MonthlySalary * 12;
+END;
+GO
+
+SELECT
+    EmployeeName,
+    Salary,
+    dbo.fn_GetYearlySalary(Salary) AS YearlySalary
+FROM Employees;
+GO
+
+CREATE OR ALTER FUNCTION dbo.fn_GetEmployeesByDepartment
+(
+    @DepartmentId INT
+)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT EmployeeId, EmployeeName, Salary
+    FROM Employees
+    WHERE DepartmentId = @DepartmentId
+);
+GO
+
+SELECT *
+FROM dbo.fn_GetEmployeesByDepartment(1);
+GO
+
+Задание 27. Оконные функции, CTE и CASE
+SELECT
+    EmployeeName,
+    Salary,
+    ROW_NUMBER() OVER (ORDER BY Salary DESC) AS RowNumber,
+    RANK() OVER (ORDER BY Salary DESC) AS SalaryRank,
+    DENSE_RANK() OVER (ORDER BY Salary DESC) AS DenseSalaryRank
+FROM Employees;
+GO
+
+SELECT
+    EmployeeName,
+    DepartmentId,
+    Salary,
+    SUM(Salary) OVER (PARTITION BY DepartmentId) AS DepartmentTotal,
+    AVG(Salary) OVER (PARTITION BY DepartmentId) AS DepartmentAverage
+FROM Employees;
+GO
+
+WITH DepartmentStats AS
+(
+    SELECT
+        DepartmentId,
+        COUNT(*) AS EmployeeCount,
+        AVG(Salary) AS AverageSalary
+    FROM Employees
+    GROUP BY DepartmentId
+)
+SELECT
+    d.DepartmentName,
+    ds.EmployeeCount,
+    ds.AverageSalary
+FROM DepartmentStats ds
+JOIN Departments d
+    ON ds.DepartmentId = d.DepartmentId;
+GO
+
+SELECT
+    EmployeeName,
+    Salary,
+    CASE
+        WHEN Salary >= 100000 THEN N'Высокая'
+        WHEN Salary >= 70000 THEN N'Средняя'
+        ELSE N'Начальная'
+    END AS SalaryLevel,
+    CASE
+        WHEN DATEDIFF(YEAR, HireDate, GETDATE()) >= 5
+            THEN N'Опытный сотрудник'
+        ELSE N'Новый сотрудник'
+    END AS Experience
+FROM Employees;
+GO
+
+SELECT
+    EmployeeName,
+    HireDate,
+    DATEADD(YEAR, 1, HireDate) AS NextWorkAnniversary,
+    DATEDIFF(YEAR, HireDate, GETDATE()) AS YearsWorked,
+    FORMAT(HireDate, 'dd.MM.yyyy') AS FormattedHireDate
+FROM Employees;
+GO

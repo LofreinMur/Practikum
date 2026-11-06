@@ -1,0 +1,119 @@
+USE master;
+GO
+
+IF DB_ID(N'PracticeDB') IS NOT NULL
+BEGIN
+    ALTER DATABASE PracticeDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE PracticeDB;
+END;
+GO
+
+CREATE DATABASE PracticeDB;
+GO
+
+USE PracticeDB;
+GO
+
+CREATE TABLE Departments
+(
+    DepartmentId INT IDENTITY(1,1) PRIMARY KEY,
+    DepartmentName NVARCHAR(100) NOT NULL,
+    Location NVARCHAR(100)
+);
+GO
+
+CREATE TABLE Employees
+(
+    EmployeeId INT IDENTITY(1,1) PRIMARY KEY,
+    EmployeeName NVARCHAR(100) NOT NULL,
+    Salary DECIMAL(10,2) NOT NULL,
+    HireDate DATE NOT NULL,
+    DepartmentId INT NOT NULL,
+    ManagerId INT NULL,
+
+    CONSTRAINT FK_Employees_Departments
+        FOREIGN KEY (DepartmentId)
+        REFERENCES Departments(DepartmentId),
+
+    CONSTRAINT FK_Employees_Manager
+        FOREIGN KEY (ManagerId)
+        REFERENCES Employees(EmployeeId)
+);
+GO
+
+CREATE TABLE Projects
+(
+    ProjectId INT IDENTITY(1,1) PRIMARY KEY,
+    ProjectName NVARCHAR(100) NOT NULL,
+    StartDate DATE,
+    Budget DECIMAL(12,2)
+);
+GO
+
+CREATE TABLE EmployeeProjects
+(
+    EmployeeId INT NOT NULL,
+    ProjectId INT NOT NULL,
+    Hours INT NOT NULL,
+
+    CONSTRAINT PK_EmployeeProjects
+        PRIMARY KEY (EmployeeId, ProjectId),
+
+    CONSTRAINT FK_EmployeeProjects_Employees
+        FOREIGN KEY (EmployeeId)
+        REFERENCES Employees(EmployeeId),
+
+    CONSTRAINT FK_EmployeeProjects_Projects
+        FOREIGN KEY (ProjectId)
+        REFERENCES Projects(ProjectId)
+);
+GO
+
+INSERT INTO Departments (DepartmentName, Location)
+VALUES
+(N'Разработка', N'Москва'),
+(N'Продажи', N'Санкт-Петербург'),
+(N'Бухгалтерия', N'Москва'),
+(N'Маркетинг', N'Казань'),
+(N'Поддержка', N'Екатеринбург');
+GO
+
+INSERT INTO Employees
+    (EmployeeName, Salary, HireDate, DepartmentId, ManagerId)
+VALUES
+(N'Иван Петров', 120000, '2019-03-15', 1, NULL),
+(N'Анна Смирнова', 95000, '2020-06-10', 1, 1),
+(N'Дмитрий Иванов', 85000, '2021-02-01', 1, 1),
+(N'Елена Кузнецова', 90000, '2018-11-20', 2, NULL),
+(N'Сергей Соколов', 70000, '2022-04-12', 2, 4),
+(N'Ольга Попова', 80000, '2020-09-05', 3, NULL),
+(N'Алексей Морозов', 65000, '2023-01-16', 3, 6),
+(N'Мария Волкова', 75000, '2021-07-19', 4, NULL),
+(N'Павел Лебедев', 60000, '2022-10-03', 5, NULL),
+(N'Наталья Федорова', 68000, '2024-02-14', 5, 9);
+GO
+
+INSERT INTO Projects (ProjectName, StartDate, Budget)
+VALUES
+(N'Корпоративный сайт', '2023-01-10', 500000),
+(N'Мобильное приложение', '2023-06-01', 900000),
+(N'Рекламная кампания', '2024-02-15', 300000),
+(N'CRM-система', '2024-04-01', 750000),
+(N'Техническая поддержка', '2024-09-01', 250000);
+GO
+
+INSERT INTO EmployeeProjects (EmployeeId, ProjectId, Hours)
+VALUES
+(1, 1, 120),
+(2, 1, 90),
+(3, 1, 100),
+(1, 2, 80),
+(2, 2, 110),
+(4, 3, 70),
+(8, 3, 95),
+(6, 4, 100),
+(7, 4, 85),
+(9, 5, 60),
+(10, 5, 75),
+(3, 4, 40);
+GO
